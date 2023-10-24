@@ -25,6 +25,9 @@
 - Run `Compile.bat`, which will sort out everything for you
 - Done! stub is in dist folder. 
 
+-Make Sure When you are making the bot to enable 3 way intents!
+![image](https://github.com/AbaddonCS/Discord-RAT/assets/103697143/c9ce6a84-1308-4e28-83bb-2e103df1d426)
+
 ## Disclaimer
 
 This is not meant to be an actual hacking tool. Its a POC. Feel free to use the code however you like, if you want give us a credit.
