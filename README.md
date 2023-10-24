@@ -26,7 +26,7 @@
 - Done! stub is in dist folder. 
 
 - Make Sure When you are making the bot to enable 3 way intents!
-![image](https://github.com/AbaddonCS/Discord-RAT/assets/103697143/9e3a11a0-b2d6-4ce0-b3bc-cbf0530c708d)
+![image](https://github.com/AbaddonCS/Discord-RAT/assets/103697143/6092edb0-45ac-4c86-a045-86b995b69f16)
 
 
 ## Disclaimer
