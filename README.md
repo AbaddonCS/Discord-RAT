@@ -31,11 +31,11 @@
 
 ## Disclaimer
 
-This is not meant to be an actual hacking tool. Its a POC. Feel free to use the code however you like, if you want give us a credit.
+While this stub technically will work, i have implemented 0 security features. It also has a few dependencies, the stub needs a ssl dll to be present in path. If you want to learn how to bypass this, join our discord [here](https://discord.gg/QppgvSUv4U) and we will teach you. Or if you know how to statically link dll files to an executeable, just do that. 
 
 ## Credits
 1) **ME** (nomad)
 2) peroxide my dawg
-3) BlueCosmo from CosmodiumCS for helping out with nim
+3) BlueCosmo from [CosmodiumCS](https://github.com/cosmodiumcs) for helping out with nim
 
 shoutout thegamer___ on dc
