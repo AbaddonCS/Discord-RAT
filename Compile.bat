@@ -20,7 +20,7 @@ echo ┣┫┣┓┏┓┏┫┏┫┏┓┏┓  [35m┃ ┏┛[0m
 echo ┛┗┗┛┗┻┗┻┗┻┗┛┛┗  [35m┗┛┗━[0m
 echo.
 echo Compiling [35source[0m
-nim c .\Bot.nim
+nim c --app:gui .\Bot.nim
 timeout 2 > nul
 
 echo.
